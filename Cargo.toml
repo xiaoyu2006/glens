@@ -1,0 +1,19 @@
+[package]
+name = "glens"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Gravitational Lensing Simulator"
+authors = ["Yi Cao <me@ycao.top>"]
+license = "MIT"
+license-file = "LICENSE"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rayon = "1.7"
+structopt = "0.3"
+vec3 = { git = "https://github.com/ryankaplan/vec3.git" }
+
+[profile.release]
+debug = true
