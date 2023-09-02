@@ -3,7 +3,8 @@ pub mod pic;
 pub mod render;
 pub mod camera;
 pub mod util;
-pub mod test;
+pub mod hittable;
+pub mod object;
 
 use pic::Picture;
 use structopt::StructOpt;

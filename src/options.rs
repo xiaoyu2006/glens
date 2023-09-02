@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use vec3::Vec3;
 
-use crate::{render::{World, MassPoint, VisibleObject}, pic::Color, camera::Camera};
+use crate::{render::{World, MassPoint}, pic::Color, camera::Camera, hittable::Hittable, object::{Sphere, Disk}};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "glens", about = "Gravitational lens simulator.")]
@@ -56,10 +56,15 @@ pub struct Options {
     #[structopt(short = "m", long = "mass-points", default_value = "0,2,0,1")]
     pub mass_points: String,
 
-    /// Visible objects in the world.
-    /// Each object is in the form of "x,y,z,r,g,b,radius" and separated by a semicolon.
-    #[structopt(short = "v", long = "visible-objects", default_value = "0,6,0,2,1,0.8,0.6")]
-    pub visible_objects: String,
+    /// Spheres in the world.
+    /// Each sphere is in the form of "x,y,z,r,g,b,radius" and separated by a semicolon.
+    #[structopt(short = "s", long = "spheres", default_value = "0,6,0,2,1,0.8,0.6")]
+    pub spheres: String,
+
+    /// Disks in the world.
+    /// Each disk is in the form of "x,y,z,r,g,b,radius,normal_x,normal_y,normal_z" and separated by a semicolon.
+    #[structopt(short = "k", long = "disks", default_value = "-2,4,2,0.6,1,0.8,0.6,0,0,1")]
+    pub disks: String,
 
     /// Gravitation constant.
     #[structopt(short = "g", long = "gravitation", default_value = "0.1")]
@@ -85,22 +90,48 @@ impl Options {
             });
         }
 
-        let mut visible_objects = Vec::new();
-        for visible_object in self.visible_objects.split(';') {
-            let mut parts = visible_object.split(',');
-            let x = parts.next().unwrap().parse::<f32>().unwrap();
-            let y = parts.next().unwrap().parse::<f32>().unwrap();
-            let z = parts.next().unwrap().parse::<f32>().unwrap();
-            let r = parts.next().unwrap().parse::<f32>().unwrap();
-            let g = parts.next().unwrap().parse::<f32>().unwrap();
-            let b = parts.next().unwrap().parse::<f32>().unwrap();
-            let radius = parts.next().unwrap().parse::<f32>().unwrap();
-            visible_objects.push(VisibleObject {
-                position: Vec3::new(x, y, z),
-                color: Color(r, g, b),
-                radius,
-            });
+        let mut visible_objects: Vec<Box<dyn Hittable + Sync>> = Vec::new();
+        if !self.spheres.is_empty() {
+            for visible_object in self.spheres.split(';') {
+                let mut parts = visible_object.split(',');
+                let x = parts.next().unwrap().parse::<f32>().unwrap();
+                let y = parts.next().unwrap().parse::<f32>().unwrap();
+                let z = parts.next().unwrap().parse::<f32>().unwrap();
+                let r = parts.next().unwrap().parse::<f32>().unwrap();
+                let g = parts.next().unwrap().parse::<f32>().unwrap();
+                let b = parts.next().unwrap().parse::<f32>().unwrap();
+                let radius = parts.next().unwrap().parse::<f32>().unwrap();
+                visible_objects.push(Box::new(Sphere {
+                    position: Vec3::new(x, y, z),
+                    color: Color(r, g, b),
+                    radius,
+                }));
+            }
         }
+
+        if !self.disks.is_empty() {
+            for visible_object in self.disks.split(';') {
+                let mut parts = visible_object.split(',');
+                let x = parts.next().unwrap().parse::<f32>().unwrap();
+                let y = parts.next().unwrap().parse::<f32>().unwrap();
+                let z = parts.next().unwrap().parse::<f32>().unwrap();
+                let r = parts.next().unwrap().parse::<f32>().unwrap();
+                let g = parts.next().unwrap().parse::<f32>().unwrap();
+                let b = parts.next().unwrap().parse::<f32>().unwrap();
+                let radius = parts.next().unwrap().parse::<f32>().unwrap();
+                let normal_x = parts.next().unwrap().parse::<f32>().unwrap();
+                let normal_y = parts.next().unwrap().parse::<f32>().unwrap();
+                let normal_z = parts.next().unwrap().parse::<f32>().unwrap();
+                visible_objects.push(Box::new(Disk {
+                    position: Vec3::new(x, y, z),
+                    color: Color(r, g, b),
+                    radius,
+                    normal: Vec3::new(normal_x, normal_y, normal_z),
+                }));
+            }
+        }
+
+        
 
         let mut parts = self.boundary.split(',');
         let x1 = parts.next().unwrap().parse::<f32>().unwrap();

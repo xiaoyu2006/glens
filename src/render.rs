@@ -1,34 +1,12 @@
 use vec3::Vec3;
 
-use crate::{pic::Color, camera::Camera};
+use crate::{pic::Color, camera::Camera, hittable::Hittable};
 
 #[derive(Debug)]
 pub struct MassPoint {
     pub position: Vec3,
     pub mass: f32,
 }
-
-#[derive(Debug)]
-pub struct VisibleObject {
-    pub position: Vec3,
-    pub color: Color,
-    pub radius: f32,
-}
-
-impl VisibleObject {
-    pub fn inside_sphere(&self, p: Vec3) -> bool {
-        (p - self.position).length_squared() < self.radius * self.radius
-    }
-
-    /// If the segment <p1,p2> intersects with the sphere.
-    /// The segment is considered to intersect with the sphere if either of its endpoints is inside the sphere.
-    /// There are edge cases where the segment is crossing the sphere but neither of its endpoints is inside the sphere.
-    /// But this situation is omitted for simplicity since delta_t is small enough.
-    pub fn intersect_sphere(&self, p1: Vec3, p2: Vec3) -> bool {
-        self.inside_sphere(p1) || self.inside_sphere(p2)
-    }
-}
-
 
 /// Although the name is `Ray`, it's actually a particle.
 /// We somehow inverse-trace the proton from the camera to the object since light travels in the same manner as a particle with mass does.
@@ -50,11 +28,10 @@ impl Ray {
 
 
 /// Encapsulates configuration for the simulation.
-#[derive(Debug)]
 pub struct World {
     // =====SCENE=====
     pub mass_points: Vec<MassPoint>,
-    pub visible_objects: Vec<VisibleObject>,
+    pub visible_objects: Vec<Box<dyn Hittable + Sync>>,
 
     // =====SIMULATION=====
     /// The boundaries of the simulation. Specifies a cuboid with the given corners.
@@ -82,6 +59,11 @@ impl World {
 
         for _it in 0..self.max_iterations {
             let acceleration = self.get_acceleration(ray.position);
+            // Check for NaN in acceleration
+            if acceleration.x.is_nan() || acceleration.y.is_nan() || acceleration.z.is_nan() {
+                return Color(0.0, 0.0, 0.0);
+            }
+
             ray.velocity += acceleration * self.delta_t;
 
             let (p1, p2) = ray.step(self.delta_t);
@@ -103,11 +85,13 @@ impl World {
             // println!("mass_point.position: {:?}", mass_point.position);
             // println!("position: {:?}", position);
             // println!("direction: {:?}", direction);
-            let mut distance_squared = direction.length_squared();
-            if distance_squared < 1e-2 {
-                distance_squared = 1e-2;  // avoid division by zero
+            let distance_squared = direction.length_squared();
+            let mut accl_mag = mass_point.mass / distance_squared;
+
+            if accl_mag > 100.0 {
+                accl_mag = 0.0 / 0.0;  // Get an NaN
             }
-            let accl_mag = mass_point.mass / distance_squared;
+
             acceleration += direction.normalize() * accl_mag;
         }
         acceleration
@@ -121,8 +105,8 @@ impl World {
     /// If the segment <p1,p2> intersects with any object, return the object and the distance to the intersection.
     fn intersect(&self, p1: Vec3, p2: Vec3) -> Option<Color> {
         for obj in &self.visible_objects {
-            if obj.intersect_sphere(p1, p2) {
-                return Some(obj.color);
+            if let Some(color) = obj.intersect(p1, p2) {
+                return Some(color);
             }
         }
         None
