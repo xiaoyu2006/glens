@@ -37,7 +37,7 @@ pub struct World {
     /// The boundaries of the simulation. Specifies a cuboid with the given corners.
     pub boundaries: (Vec3, Vec3),
     /// Maximum number of iterations to calculate for each ray.
-    /// Either a ray reaches the boundaries or this number of iterations is reached will be discarded.
+    /// A ray either reaching the boundaries or the max number of iterations will be discarded.
     pub max_iterations: usize,
     pub delta_t: f32,
 
@@ -102,7 +102,7 @@ impl World {
         p.x < min.x || p.y < min.y || p.z < min.z || p.x > max.x || p.y > max.y || p.z > max.z
     }
 
-    /// If the segment <p1,p2> intersects with any object, return the object and the distance to the intersection.
+    /// If the segment <p1,p2> intersects with any object, return the object's color.
     fn intersect(&self, p1: Vec3, p2: Vec3) -> Option<Color> {
         for obj in &self.visible_objects {
             if let Some(color) = obj.intersect(p1, p2) {

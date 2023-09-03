@@ -5,10 +5,10 @@ from math import sin, cos, pi
 
 CONFIG_TEMPLATE = [
     "--look-at=0,2,0",
-    "--look-from=0,0,-0.7",
+    "--look-from=0,0,-0.05",
     "--up=0,0,1",
     "--delta-t=0.01",
-    "--iterations=3000",
+    "--iterations=2000",
     "--spheres=",
     "--focus=60",
 ]
@@ -50,10 +50,12 @@ def bhs_to_args(bhs: list[Blackhole]) -> list[str]:
     return [mass_points, disks]
 
 
-bh1 = Blackhole(0.8, (0, 3, 0), (1, 0, 0), 0.1)
-bh2 = Blackhole(1.6, (0, 1, 0), (0, 0, 1), 0.2)
+bh1 = Blackhole(0.2, (0, 3, 0), (0.96, 0.64, 0.25), 0.2)
+bh2 = Blackhole(0.5, (0, 1, 0), (0.33, 0.26, 0.96), 0.4)
 
-for angle in range(0, 360, 1):
+i = 0
+
+for angle in range(0, 360, 2):
     bh1.set_pos(
         (
             BH_MOTION_CENTER[0] + cos(angle * pi / 180) * 0.6,
@@ -69,10 +71,11 @@ for angle in range(0, 360, 1):
         )
     )
     args = (
-        CONFIG_TEMPLATE + bhs_to_args([bh1, bh2]) + [f"--output-file=output2/angle{angle}.ppm"]
+        CONFIG_TEMPLATE + bhs_to_args([bh1, bh2]) + [f"--output-file=output2/{i}.ppm"]
     )
     cmd = ["./target/release/glens"] + args
     print(cmd)
     subprocess.run(cmd)
+    i += 1
 
-os.system("ffmpeg -framerate 10 -i output2/angle%d.ppm -vcodec mpeg4 -y output2/movie.mp4")
+os.system("ffmpeg -framerate 15 -i output2/%d.ppm -vcodec libx264 -b 5000k -y output2/movie.mp4")

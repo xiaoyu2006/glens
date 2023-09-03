@@ -8,8 +8,6 @@ use crate::{render::{World, MassPoint}, pic::Color, camera::Camera, hittable::Hi
 #[derive(Debug, StructOpt)]
 #[structopt(name = "glens", about = "Gravitational lens simulator.")]
 pub struct Options {
-    // =====RENDERING=====
-
     /// Width of the output image in pixels.
     #[structopt(short = "w", long = "width", default_value = "960")]
     pub width: usize,
@@ -30,8 +28,6 @@ pub struct Options {
     #[structopt(short = "b", long = "boundary", default_value = "-10,-10,-10,10,10,10")]
     pub boundary: String,
 
-    /// =====CAMERA=====
-
     /// Where to look from, in the form of "x,y,z".
     #[structopt(short = "f", long = "look-from", default_value = "0,0,0")]
     pub camera_lookfrom: String,
@@ -47,8 +43,6 @@ pub struct Options {
     /// Camera-relative "up" direction, in the form of "x,y,z".
     #[structopt(short = "u", long = "up", default_value = "0,0,1")]
     pub camera_up: String,
-
-    // =====SCENE=====
 
     /// Mass points in the world.
     /// Each mass point is in the form of "x,y,z,mass" and separated by a semicolon.
